@@ -16,7 +16,6 @@ type ModalState =
   | { kind: "unit"; mode: "add" | "edit"; item?: Unit }
   | { kind: "materi"; mode: "add" | "edit"; item?: Materi }
   | { kind: "kamus"; mode: "add" | "edit"; item?: Kamus }
-  | { kind: "image" }
   | { kind: "csv" }
   | { kind: "confirm"; label: string; onConfirm: () => void }
   | null;
@@ -38,6 +37,7 @@ function AdminContent() {
   const [kamus, setKamus] = useState<Kamus[]>([]);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [view, setView] = useState<View>("dashboard");
+  const [kamusImgOnly, setKamusImgOnly] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -217,7 +217,7 @@ function AdminContent() {
           openPicker={() => setModal({ kind: "picker" })}
           openAdd={(kind) => setModal({ kind, mode: "add" } as ModalState)}
           goManage={(v) => setView(v)}
-          openImage={() => setModal({ kind: "image" })}
+          goKamusImgs={() => { setKamusImgOnly(true); setView("kamus"); }}
           openCsv={() => setModal({ kind: "csv" })}
         />
       )}
@@ -247,11 +247,12 @@ function AdminContent() {
       )}
       {view === "kamus" && (
         <KamusListView kamus={kamus} units={units} jilids={jilids}
-          back={() => setView("dashboard")}
+          back={() => { setKamusImgOnly(false); setView("dashboard"); }}
           add={() => setModal({ kind: "kamus", mode: "add" })}
           edit={(item) => setModal({ kind: "kamus", mode: "edit", item })}
           remove={(item) => setModal({ kind: "confirm", label: `حذف الكلمة «${item.kalimah}»؟`, onConfirm: () => removeKamus(item.id) })}
           openCsv={() => setModal({ kind: "csv" })}
+          imgOnly={kamusImgOnly}
         />
       )}
 
@@ -261,7 +262,6 @@ function AdminContent() {
       {modal?.kind === "unit"    && <UnitFormModal item={modal.item} jilids={jilids} onClose={() => setModal(null)} onSave={saveUnit} />}
       {modal?.kind === "materi"  && <MateriFormModal item={modal.item} jilids={jilids} units={units} onClose={() => setModal(null)} onSave={saveMateri} />}
       {modal?.kind === "kamus"   && <KamusFormModal item={modal.item} jilids={jilids} units={units} onClose={() => setModal(null)} onSave={saveKamus} />}
-      {modal?.kind === "image"   && <ImageUploadModal onClose={() => setModal(null)} />}
       {modal?.kind === "csv"     && <CsvImportModal jilids={jilids} units={units} onClose={() => setModal(null)} onImport={importKamusCsv} />}
       {modal?.kind === "confirm" && <ConfirmModal label={modal.label} onClose={() => setModal(null)} onConfirm={() => { modal.onConfirm(); setModal(null); }} />}
 
@@ -283,11 +283,11 @@ function AdminContent() {
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
-function AdminDashboard({ stats, activity, openPicker, openAdd, goManage, openImage, openCsv }: {
+function AdminDashboard({ stats, activity, openPicker, openAdd, goManage, goKamusImgs, openCsv }: {
   stats: ReturnType<typeof import("react")["useState"] extends never ? never : any>;
   activity: Activity[];
   openPicker: () => void; openAdd: (k: string) => void;
-  goManage: (v: View) => void; openImage: () => void; openCsv: () => void;
+  goManage: (v: View) => void; goKamusImgs: () => void; openCsv: () => void;
 }) {
   const cards = [
     { key: "jilids", view: "jilids" as View, addKind: "jilid", label: "الأجزاء", icon: "book" as const, value: stats.jilids, hint: `${toAD(stats.jilidsDone)} متاح · ${toAD(stats.jilidsPrep)} قيد الإعداد`, accent: "var(--absolute-zero)" },
@@ -367,7 +367,7 @@ function AdminDashboard({ stats, activity, openPicker, openAdd, goManage, openIm
               <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => openAdd("unit")}><Icon name="plus" size={14} /> إضافة دَرس جديد</button>
               <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => openAdd("kamus")}><Icon name="plus" size={14} /> إضافة كلمة إلى المعجم</button>
               <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={() => openAdd("materi")}><Icon name="plus" size={14} /> إضافة فقرة / حوار</button>
-              <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={openImage}><Icon name="image" size={14} /> رفع صورة</button>
+              <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={goKamusImgs}><Icon name="image" size={14} /> إدارة كلمات بالصّور</button>
               <button className="btn btn-ghost" style={{ justifyContent: "flex-start" }} onClick={openCsv}><Icon name="file" size={14} /> استيراد معجم من CSV</button>
             </div>
           </div>
@@ -560,10 +560,12 @@ function MateriListView({ materi, units, jilids, back, add, edit, remove }: { ma
   );
 }
 
-function KamusListView({ kamus, units, jilids, back, add, edit, remove, openCsv }: { kamus: Kamus[]; units: Unit[]; jilids: Jilid[]; back: () => void; add: () => void; edit: (k: Kamus) => void; remove: (k: Kamus) => void; openCsv: () => void }) {
+function KamusListView({ kamus, units, jilids, back, add, edit, remove, openCsv, imgOnly: initImgOnly }: { kamus: Kamus[]; units: Unit[]; jilids: Jilid[]; back: () => void; add: () => void; edit: (k: Kamus) => void; remove: (k: Kamus) => void; openCsv: () => void; imgOnly?: boolean }) {
   const [q, setQ] = useState("");
   const [unitFilter, setUnitFilter] = useState("all");
+  const [imgOnly, setImgOnly] = useState(!!initImgOnly);
   const filtered = kamus.filter(k => {
+    if (imgOnly && !k.has_img) return false;
     if (unitFilter !== "all") {
       const [jid, un] = unitFilter.split("::");
       if (k.jilid_id !== jid || String(k.unit_num) !== un) return false;
@@ -584,6 +586,9 @@ function KamusListView({ kamus, units, jilids, back, add, edit, remove, openCsv 
           <option value="all">كلّ الدّروس</option>
           {unitOptions.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
         </select>
+        <button className={`btn btn-sm ${imgOnly ? "btn-primary" : "btn-ghost"}`} onClick={() => setImgOnly(v => !v)}>
+          <Icon name="image" size={13} /> بالصّور فقط
+        </button>
       </div>
       <div style={{ background: "#fff", border: "1px solid var(--cool-gray)", borderRadius: "var(--r-card-sm)", overflow: "hidden" }}>
         {filtered.map((k, i) => {
