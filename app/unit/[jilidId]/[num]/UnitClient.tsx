@@ -54,12 +54,6 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: 
   const [localTashkeel, setLocalTashkeel] = useState(tweaks.tashkeel);
   const [bookmark, setBookmark] = useState(unit.status === "current");
 
-  useEffect(() => {
-    const close = () => setPopup(null);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, []);
-
   const onWord = useCallback((rect: DOMRect, entry: Kamus) => {
     setPopup({ entry, rect });
   }, []);
@@ -139,7 +133,12 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: 
       {tab === "kamus" && <UnitKamusView entries={kamus} tashkeel={localTashkeel} onSwitchToFlash={() => setTab("flashcards")} />}
       {tab === "flashcards" && <FlashcardView entries={kamus} tashkeel={localTashkeel} onClose={() => setTab("kamus")} />}
 
-      {popup && <KamusPopup entry={popup.entry} rect={popup.rect} onClose={() => setPopup(null)} tashkeel={localTashkeel} />}
+      {popup && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setPopup(null)} />
+          <KamusPopup entry={popup.entry} rect={popup.rect} onClose={() => setPopup(null)} tashkeel={localTashkeel} />
+        </>
+      )}
     </main>
   );
 }
