@@ -157,7 +157,7 @@ function AdminContent() {
       setKamus(prev => prev.map(k => k.id === original.id ? { ...k, ...data } : k));
       logActivity("edit", `تعديل كلمة: ${data.kalimah}`, "#d97757");
     } else {
-      const item = { ...data, id: newId("k") } as Kamus;
+      const item = { id: newId("k"), ...data } as Kamus;
       await supabase.from("kamus").insert(item);
       setKamus(prev => [...prev, item]);
       logActivity("add", `كلمة جديدة: ${data.kalimah}`, "#15803d");
@@ -831,6 +831,7 @@ function MateriFormModal({ item, jilids, units, onClose, onSave }: { item?: Mate
 }
 
 function KamusFormModal({ item, jilids, units, onClose, onSave }: { item?: Kamus; jilids: Jilid[]; units: Unit[]; onClose: () => void; onSave: (data: Partial<Kamus>, original?: Kamus) => void }) {
+  const [entryId] = useState(() => item?.id || newId("k"));
   const [jilidId, setJilidId] = useState(item?.jilid_id || jilids[0]?.id || "");
   const [unitNum, setUnitNum] = useState<number>(item?.unit_num ?? 1);
   const [kalimah, setKalimah] = useState(item?.kalimah || "");
@@ -845,16 +846,39 @@ function KamusFormModal({ item, jilids, units, onClose, onSave }: { item?: Kamus
   const [madhi, setMadhi] = useState(item?.tashrif?.madhi || "");
   const [mudhari, setMudhari] = useState(item?.tashrif?.mudhari || "");
   const [masdar, setMasdar] = useState(item?.tashrif?.masdar || "");
+  const [imgFile, setImgFile] = useState<File | null>(null);
+  const [imgPreview, setImgPreview] = useState<string | null>(null);
+  const [imgDrag, setImgDrag] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+
   const unitsForJilid = units.filter(u => u.jilid_id === jilidId);
   useEffect(() => { if (!unitsForJilid.find(u => u.num === unitNum) && unitsForJilid[0]) setUnitNum(unitsForJilid[0].num); }, [jilidId]);
-  const valid = kalimah.trim().length > 0 && sharh.trim().length > 0;
-  const submit = () => {
-    if (!valid) return;
-    onSave({ jilid_id: jilidId, unit_num: unitNum, kalimah: kalimah.trim(), sharh: sharh.trim(), jam: jam.trim() || null, mufrad: mufrad.trim() || null, muradif: muradif.trim() || null, didh: didh.trim() || null, mithal: mithal.trim() || null, has_img: hasImg, tashrif: withTashrif ? { madhi: madhi.trim(), mudhari: mudhari.trim(), masdar: masdar.trim() } : null }, item);
+
+  const handleImgFile = (file: File | null) => {
+    if (!file) return;
+    setImgFile(file);
+    const reader = new FileReader();
+    reader.onload = e => setImgPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
   };
+
+  const valid = kalimah.trim().length > 0 && sharh.trim().length > 0;
+
+  const submit = async () => {
+    if (!valid) return;
+    setUploading(true);
+    if (imgFile && hasImg) {
+      const ext = imgFile.name.split(".").pop() || "jpg";
+      await supabase.storage.from("kamus-images").upload(`${entryId}.${ext}`, imgFile, { upsert: true, contentType: imgFile.type });
+    }
+    onSave({ id: entryId, jilid_id: jilidId, unit_num: unitNum, kalimah: kalimah.trim(), sharh: sharh.trim(), jam: jam.trim() || null, mufrad: mufrad.trim() || null, muradif: muradif.trim() || null, didh: didh.trim() || null, mithal: mithal.trim() || null, has_img: hasImg, tashrif: withTashrif ? { madhi: madhi.trim(), mudhari: mudhari.trim(), masdar: masdar.trim() } : null }, item);
+    setUploading(false);
+  };
+
   return (
     <AdminModal title={item ? "تعديل كلمة" : "كلمة جديدة"} onClose={onClose} width={680}
-      footer={<><button className="btn btn-ghost btn-sm" onClick={onClose}>إلغاء</button><button className="btn btn-primary btn-sm" onClick={submit} disabled={!valid}>{item ? "حفظ" : "إضافة"}</button></>}>
+      footer={<><button className="btn btn-ghost btn-sm" onClick={onClose}>إلغاء</button><button className="btn btn-primary btn-sm" onClick={submit} disabled={!valid || uploading}>{uploading ? "…" : item ? "حفظ" : "إضافة"}</button></>}>
       <FGrid>
         <AField label="الجزء" required><SInput value={jilidId} onChange={setJilidId} options={jilids.map(j => ({ value: j.id, label: j.name }))} /></AField>
         <AField label="الدّرس" required><SInput value={String(unitNum)} onChange={v => setUnitNum(Number(v))} options={unitsForJilid.length ? unitsForJilid.map(u => ({ value: String(u.num), label: `${toAD(u.num)} · ${u.title}` })) : [{ value: "1", label: "—" }]} /></AField>
@@ -864,9 +888,42 @@ function KamusFormModal({ item, jilids, units, onClose, onSave }: { item?: Kamus
         <AField label="المرادف"><TInput value={muradif} onChange={setMuradif} placeholder="بيت" /></AField>
         <AField label="الضّدّ"><TInput value={didh} onChange={setDidh} placeholder="—" /></AField>
         <AField label="مثال" full><TInput value={mithal} onChange={setMithal} placeholder="منزلُهُ صغيرٌ وجميل." /></AField>
-        <AField label="صورة مرفقة"><Seg value={hasImg ? "yes" : "no"} onChange={v => setHasImg(v === "yes")} options={[{ value: "no", label: "بدون" }, { value: "yes", label: "مع صورة" }]} /></AField>
+        <AField label="صورة مرفقة"><Seg value={hasImg ? "yes" : "no"} onChange={v => { setHasImg(v === "yes"); if (v === "no") { setImgFile(null); setImgPreview(null); } }} options={[{ value: "no", label: "بدون" }, { value: "yes", label: "مع صورة" }]} /></AField>
         <AField label="تصريف الفعل"><Seg value={withTashrif ? "yes" : "no"} onChange={v => setWithTashrif(v === "yes")} options={[{ value: "no", label: "بدون" }, { value: "yes", label: "فعل" }]} /></AField>
       </FGrid>
+      {hasImg && (
+        <div style={{ marginTop: 14, marginBottom: 4 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>الصّورة</div>
+          <div
+            onDragOver={e => { e.preventDefault(); setImgDrag(true); }}
+            onDragLeave={() => setImgDrag(false)}
+            onDrop={e => { e.preventDefault(); setImgDrag(false); handleImgFile(e.dataTransfer.files[0]); }}
+            onClick={() => imgRef.current?.click()}
+            style={{
+              border: `2px dashed ${imgDrag ? "var(--blue-pop)" : "var(--silver-mist)"}`,
+              borderRadius: 12, padding: imgPreview ? 10 : "28px 20px",
+              textAlign: "center", cursor: "pointer",
+              background: imgDrag ? "color-mix(in oklab,var(--blue-pop) 8%,transparent)" : "var(--cloud-white)",
+            }}
+          >
+            {imgPreview ? (
+              <img src={imgPreview} alt="" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8, margin: "0 auto", display: "block" }} />
+            ) : (
+              <>
+                <Icon name="image" size={28} style={{ color: "var(--graphite)", marginBottom: 6 }} />
+                <div className="ar" style={{ fontSize: 14, color: "var(--absolute-zero)", marginBottom: 2 }}>اسحب صورةً أو اضغط للاختيار</div>
+                <div className="ar" style={{ fontSize: 12, color: "var(--graphite)" }}>PNG · JPG · WebP</div>
+              </>
+            )}
+            <input ref={imgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleImgFile(e.target.files?.[0] ?? null)} />
+          </div>
+          {imgPreview && (
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => { setImgFile(null); setImgPreview(null); }}>
+              <Icon name="x" size={12} /> إزالة الصّورة
+            </button>
+          )}
+        </div>
+      )}
       {withTashrif && (
         <div style={{ padding: 14, background: "var(--cloud-white)", borderRadius: 12, marginTop: 4, marginBottom: 14 }}>
           <div className="eyebrow" style={{ marginBottom: 10 }}>تصريف الفعل</div>
