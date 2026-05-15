@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[84058,["/aby/_next/static/chunks/01xlw8hd842-c.js","/aby/_next/static/chunks/0d3shmwh5_nmn.js","/aby/_next/static/chunks/022bneligbk63.js","/aby/_next/static/chunks/0fxy_ilq_07bv.js"],"UnitClient"]
+2:I[84058,["/aby/_next/static/chunks/01xlw8hd842-c.js","/aby/_next/static/chunks/0d3shmwh5_nmn.js","/aby/_next/static/chunks/0674kugabqd6y.js","/aby/_next/static/chunks/0fxy_ilq_07bv.js"],"UnitClient"]
 3:I[97367,["/aby/_next/static/chunks/01xlw8hd842-c.js","/aby/_next/static/chunks/0d3shmwh5_nmn.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"jilid":{"id":"jilid-1","name":"الجزء الأوّل","level":"مبتدئ","unit_count":8,"accent":"#292929","locked":false,"resume_unit":3,"resume_progress":0.4},"unit":{"id":"j1-u6","jilid_id":"jilid-1","num":6,"title":"العمل","sub":"المهن والوظائف","status":"todo","words":22,"progress":0},"materi":[],"kamus":[]}],[["$","script","script-0",{"src":"/aby/_next/static/chunks/022bneligbk63.js","async":true}],["$","script","script-1",{"src":"/aby/_next/static/chunks/0fxy_ilq_07bv.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"IYDgsPDblMf34FpHuUuJB"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"jilidId":"jilid-1","num":6}],[["$","script","script-0",{"src":"/aby/_next/static/chunks/0674kugabqd6y.js","async":true}],["$","script","script-1",{"src":"/aby/_next/static/chunks/0fxy_ilq_07bv.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"z59QbcslZYpxAJlew09Hz"}
 5:null
