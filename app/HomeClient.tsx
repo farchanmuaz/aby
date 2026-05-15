@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Icon } from "@/components/Icon";
 import { Squiggle } from "@/components/Squiggle";
 import type { Jilid } from "@/lib/types";
 import { arText, toAD } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
-interface HomeClientProps {
-  jilids: Jilid[];
-}
+export function HomeClient() {
+  const [jilids, setJilids] = useState<Jilid[]>([]);
 
-export function HomeClient({ jilids }: HomeClientProps) {
+  useEffect(() => {
+    supabase.from("jilids").select("*").order("id").then(({ data }) => {
+      if (data) setJilids(data as Jilid[]);
+    });
+  }, []);
+
   return (
     <AppShell>
       {(tweaks) => <HomeView jilids={jilids} tweaks={tweaks} />}

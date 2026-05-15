@@ -9,18 +9,45 @@ import { KamusPopup } from "@/components/KamusPopup";
 import type { Jilid, Unit, Materi, Kamus } from "@/lib/types";
 import { arText, toAD, stripAr } from "@/lib/utils";
 import type { Tweaks } from "@/components/TweaksPanel";
+import { supabase } from "@/lib/supabase";
 
-interface Props { jilid: Jilid; unit: Unit; materi: Materi[]; kamus: Kamus[] }
+interface Props { jilidId: string; num: number }
 
-export function UnitClient({ jilid, unit, materi, kamus }: Props) {
+export function UnitClient({ jilidId, num }: Props) {
+  const [jilid, setJilid] = useState<Jilid | null>(null);
+  const [unit, setUnit] = useState<Unit | null>(null);
+  const [materi, setMateri] = useState<Materi[]>([]);
+  const [kamus, setKamus] = useState<Kamus[]>([]);
+  const [missing, setMissing] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("jilids").select("*").eq("id", jilidId).single(),
+      supabase.from("units").select("*").eq("jilid_id", jilidId).eq("num", num).single(),
+      supabase.from("materi").select("*").eq("jilid_id", jilidId).eq("unit_num", num).order("sort_order"),
+      supabase.from("kamus").select("*").eq("jilid_id", jilidId).eq("unit_num", num),
+    ]).then(([{ data: j }, { data: u }, { data: m }, { data: k }]) => {
+      if (!j || !u) { setMissing(true); return; }
+      setJilid(j as Jilid);
+      setUnit(u as Unit);
+      setMateri((m ?? []) as Materi[]);
+      setKamus((k ?? []) as Kamus[]);
+    });
+  }, [jilidId, num]);
+
+  if (missing) return <div style={{ padding: 60, textAlign: "center" }} className="ar">الدّرس غير موجود</div>;
+
   return (
     <AppShell>
-      {(tweaks) => <UnitView jilid={jilid} unit={unit} materi={materi} kamus={kamus} tweaks={tweaks} />}
+      {(tweaks) => jilid && unit
+        ? <UnitView jilid={jilid} unit={unit} materi={materi} kamus={kamus} tweaks={tweaks} />
+        : <div style={{ padding: 80, textAlign: "center", color: "var(--graphite)" }} className="ar">جارٍ التّحميل…</div>
+      }
     </AppShell>
   );
 }
 
-function UnitView({ jilid, unit, materi, kamus, tweaks }: Props & { tweaks: Tweaks }) {
+function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: Unit; materi: Materi[]; kamus: Kamus[]; tweaks: Tweaks }) {
   const [tab, setTab] = useState<"materi" | "kamus" | "flashcards">("materi");
   const [popup, setPopup] = useState<{ entry: Kamus; rect: DOMRect } | null>(null);
   const [readerFs, setReaderFs] = useState(tweaks.fontSize);
@@ -108,7 +135,6 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: Props & { tweaks: Twea
         ))}
       </div>
 
-      {/* Tab content */}
       {tab === "materi" && <MateriView blocks={materi} kamus={kamus} tashkeel={localTashkeel} fs={readerFs} onWord={onWord} />}
       {tab === "kamus" && <UnitKamusView entries={kamus} tashkeel={localTashkeel} onSwitchToFlash={() => setTab("flashcards")} />}
       {tab === "flashcards" && <FlashcardView entries={kamus} tashkeel={localTashkeel} onClose={() => setTab("kamus")} />}
@@ -118,7 +144,6 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: Props & { tweaks: Twea
   );
 }
 
-/* ── MateriView ─────────────────────────────────────────────────────── */
 function MateriView({ blocks, kamus, tashkeel, fs, onWord }: {
   blocks: Materi[]; kamus: Kamus[]; tashkeel: boolean; fs: number;
   onWord: (rect: DOMRect, entry: Kamus) => void;
@@ -214,7 +239,6 @@ function MateriView({ blocks, kamus, tashkeel, fs, onWord }: {
   );
 }
 
-/* ── UnitKamusView ──────────────────────────────────────────────────── */
 function UnitKamusView({ entries, tashkeel, onSwitchToFlash }: { entries: Kamus[]; tashkeel: boolean; onSwitchToFlash: () => void }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -251,7 +275,6 @@ function UnitKamusView({ entries, tashkeel, onSwitchToFlash }: { entries: Kamus[
   );
 }
 
-/* ── FlashcardView ──────────────────────────────────────────────────── */
 function FlashcardView({ entries, tashkeel, onClose }: { entries: Kamus[]; tashkeel: boolean; onClose: () => void }) {
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);

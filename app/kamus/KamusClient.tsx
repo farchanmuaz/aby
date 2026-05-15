@@ -1,17 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Icon } from "@/components/Icon";
 import { KamusListItem } from "@/components/KamusListItem";
 import type { Kamus } from "@/lib/types";
-import { arText, toAD } from "@/lib/utils";
+import { toAD } from "@/lib/utils";
 import type { Tweaks } from "@/components/TweaksPanel";
+import { supabase } from "@/lib/supabase";
 
-interface Props { entries: Kamus[] }
+export function KamusClient() {
+  const [entries, setEntries] = useState<Kamus[]>([]);
 
-export function KamusClient({ entries }: Props) {
+  useEffect(() => {
+    supabase.from("kamus").select("*").order("unit_num").order("kalimah").then(({ data }) => {
+      if (data) setEntries(data as Kamus[]);
+    });
+  }, []);
+
   return (
     <AppShell>
       {(tweaks) => <KamusView entries={entries} tweaks={tweaks} />}

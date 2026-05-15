@@ -1,19 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { Icon } from "@/components/Icon";
 import type { Jilid, Unit } from "@/lib/types";
 import { arText, toAD } from "@/lib/utils";
 import type { Tweaks } from "@/components/TweaksPanel";
+import { supabase } from "@/lib/supabase";
+import { notFound } from "next/navigation";
 
-interface Props { jilid: Jilid; units: Unit[]; allJilids: Jilid[] }
+interface Props { id: string }
 
-export function JilidClient({ jilid, units }: Props) {
+export function JilidClient({ id }: Props) {
+  const [jilid, setJilid] = useState<Jilid | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [missing, setMissing] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("jilids").select("*").eq("id", id).single(),
+      supabase.from("units").select("*").eq("jilid_id", id).order("num"),
+    ]).then(([{ data: j }, { data: u }]) => {
+      if (!j) { setMissing(true); return; }
+      setJilid(j as Jilid);
+      setUnits((u ?? []) as Unit[]);
+    });
+  }, [id]);
+
+  if (missing) return <div style={{ padding: 60, textAlign: "center" }} className="ar">الجزء غير موجود</div>;
+
   return (
     <AppShell>
-      {(tweaks) => <JilidView jilid={jilid} units={units} tweaks={tweaks} />}
+      {(tweaks) => jilid ? <JilidView jilid={jilid} units={units} tweaks={tweaks} /> : <div style={{ padding: 80, textAlign: "center", color: "var(--graphite)" }} className="ar">جارٍ التّحميل…</div>}
     </AppShell>
   );
 }
