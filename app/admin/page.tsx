@@ -877,7 +877,8 @@ function KamusFormModal({ item, jilids, units, onClose, onSave }: { item?: Kamus
     if (imgFile && hasImg) {
       const ext = imgFile.name.split(".").pop() || "jpg";
       const path = `${entryId}.${ext}`;
-      await supabase.storage.from("kamus-images").upload(path, imgFile, { upsert: true, contentType: imgFile.type });
+      const { error: upErr } = await supabase.storage.from("kamus-images").upload(path, imgFile, { upsert: true, contentType: imgFile.type });
+      if (upErr) { alert(`فشل رفع الصّورة: ${upErr.message}`); setUploading(false); return; }
       const { data: urlData } = supabase.storage.from("kamus-images").getPublicUrl(path);
       imgUrl = urlData.publicUrl;
     }
