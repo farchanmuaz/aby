@@ -203,7 +203,7 @@ function MateriView({ blocks, kamus, tashkeel, fs, onWord }: {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {(b.lines ?? []).map((l, j) => (
-                  <div key={j} style={{
+                  <div key={j} className="dialog-line" style={{
                     display: "grid", gridTemplateColumns: "82px 1fr", gap: 18, alignItems: "baseline",
                     padding: "10px 0", borderBottom: j < (b.lines?.length ?? 0) - 1 ? "1px solid var(--cool-gray)" : "0",
                   }}>

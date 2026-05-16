@@ -53,16 +53,9 @@ function JilidView({ jilid, units, tweaks }: { jilid: Jilid; units: Unit[]; twea
       </div>
 
       {/* Header */}
-      <header style={{
-        display: "grid", gridTemplateColumns: "180px 1fr auto", gap: 32, alignItems: "center",
-        marginBottom: 40, paddingBottom: 32, borderBottom: "1px solid var(--cool-gray)",
-      }}>
-        <div style={{
-          aspectRatio: "3/4",
+      <header className="jilid-header">
+        <div className="jilid-cover" style={{
           background: `linear-gradient(165deg, ${jilid.accent} 0%, ${jilid.accent}cc 100%)`,
-          borderRadius: "var(--r-image)", padding: 18,
-          display: "flex", flexDirection: "column", justifyContent: "space-between",
-          color: "#fafafa", boxShadow: "var(--shadow-image)",
         }}>
           <span style={{ fontFamily: "var(--font-ar)", fontSize: 12, opacity: .7 }}>الجزء</span>
           <div style={{ fontFamily: "var(--font-ar)", fontSize: 62, fontWeight: 700, lineHeight: 1, letterSpacing: "-2px" }}>
@@ -72,7 +65,7 @@ function JilidView({ jilid, units, tweaks }: { jilid: Jilid; units: Unit[]; twea
         </div>
         <div>
           <div className="eyebrow">{jilid.level}</div>
-          <h1 className="ar-display" style={{ fontSize: 48, margin: "6px 0 8px", color: "var(--ink-black)" }}>
+          <h1 className="ar-display jilid-h1">
             {arText(jilid.name, tweaks.tashkeel)}
           </h1>
           <p style={{ color: "var(--graphite)", maxWidth: 520, fontSize: 15, lineHeight: 1.6 }} className="ar">
@@ -83,7 +76,7 @@ function JilidView({ jilid, units, tweaks }: { jilid: Jilid; units: Unit[]; twea
             <span className="tag tag-outline">{toAD(totalWords)} كلمة في المعجم</span>
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-end" }}>
+        <div className="jilid-actions">
           {jilid.resume_unit && (
             <Link href={`/unit/${jilid.id}/${jilid.resume_unit}`} className="btn btn-primary btn-lg">
               <Icon name="star" size={14} /> تابع الدّرس {toAD(jilid.resume_unit)}
@@ -171,7 +164,7 @@ function UnitRow({ jilid, unit, tweaks, last }: { jilid: Jilid; unit: Unit; twea
   const isCurrent = unit.status === "current";
   return (
     <Link href={`/unit/${jilid.id}/${unit.num}`} style={{ textDecoration: "none" }}>
-      <div style={{
+      <div className="unit-row" style={{
         display: "grid", gridTemplateColumns: "56px 1fr auto", gap: 18, alignItems: "center",
         padding: "18px 24px", textAlign: "right",
         borderBottom: last ? "0" : "1px solid var(--cool-gray)",

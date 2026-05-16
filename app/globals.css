@@ -199,6 +199,40 @@ textarea.input{min-height:120px;resize:vertical;border-radius:var(--r-card-sm);l
 @keyframes popIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
+/* Jilid header — responsive */
+.jilid-header{
+  display:grid;
+  grid-template-columns:180px 1fr auto;
+  gap:32px;
+  align-items:center;
+  margin-bottom:40px;
+  padding-bottom:32px;
+  border-bottom:1px solid var(--cool-gray);
+}
+.jilid-cover{
+  aspect-ratio:3/4;
+  border-radius:var(--r-image);
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  color:#fafafa;
+  box-shadow:var(--shadow-image);
+}
+.jilid-h1{font-size:clamp(28px,5vw,48px);margin:6px 0 8px;color:var(--ink-black)}
+.jilid-actions{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+@media(max-width:640px){
+  .jilid-header{grid-template-columns:1fr;gap:20px}
+  .jilid-cover{max-width:140px}
+  .jilid-actions{align-items:flex-start;flex-direction:row;flex-wrap:wrap}
+}
+
+/* Unit list row + dialog line */
+@media(max-width:400px){
+  .unit-row{grid-template-columns:44px 1fr auto !important;gap:12px !important;padding:14px 16px !important}
+  .dialog-line{grid-template-columns:64px 1fr !important;gap:10px !important}
+}
+
 /* Word link (in materi) */
 .wl{
   cursor:pointer;border-radius:4px;padding:0 1px;
