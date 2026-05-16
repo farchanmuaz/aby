@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import type { Kamus } from "@/lib/types";
 import { arText } from "@/lib/utils";
@@ -14,6 +14,7 @@ interface KamusPopupProps {
 
 export function KamusPopup({ entry, rect, onClose, tashkeel }: KamusPopupProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     if (!ref.current || !rect) return;
@@ -44,9 +45,33 @@ export function KamusPopup({ entry, rect, onClose, tashkeel }: KamusPopupProps) 
       }}
     >
       {entry.has_img && entry.img_url && (
-        <img src={entry.img_url} alt={entry.kalimah}
-          style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }}
-        />
+        <>
+          <img src={entry.img_url} alt={entry.kalimah}
+            onClick={() => setLightbox(true)}
+            style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block", cursor: "zoom-in" }}
+          />
+          {lightbox && (
+            <div onClick={() => setLightbox(false)} style={{
+              position: "fixed", inset: 0, zIndex: 300,
+              background: "rgba(8,8,8,.88)", backdropFilter: "blur(6px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: 24, animation: "fadeIn .15s ease",
+            }}>
+              <img src={entry.img_url} alt={entry.kalimah}
+                onClick={ev => ev.stopPropagation()}
+                style={{ maxWidth: "min(90vw,720px)", maxHeight: "85vh", objectFit: "contain", borderRadius: 16, boxShadow: "0 32px 80px rgba(0,0,0,.5)" }}
+              />
+              <button onClick={() => setLightbox(false)} style={{
+                position: "fixed", top: 20, right: 20,
+                width: 40, height: 40, borderRadius: "50%",
+                background: "rgba(255,255,255,.15)", color: "#fff",
+                display: "grid", placeItems: "center", cursor: "pointer",
+              }}>
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+          )}
+        </>
       )}
       <div style={{ padding: "14px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
