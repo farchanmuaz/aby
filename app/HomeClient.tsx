@@ -9,9 +9,12 @@ import type { Jilid } from "@/lib/types";
 import { arText, toAD } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
+type LocalResume = { jilidId: string; unitNum: number; jilidName: string } | null;
+
 export function HomeClient() {
   const [jilids, setJilids] = useState<Jilid[]>([]);
   const [error, setError] = useState(false);
+  const [resume, setResume] = useState<LocalResume>(null);
 
   const load = () => {
     setError(false);
@@ -22,12 +25,18 @@ export function HomeClient() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    try {
+      const r = JSON.parse(localStorage.getItem("aby_resume") || "null");
+      if (r) setResume(r);
+    } catch {}
+  }, []);
 
   return (
     <AppShell>
       {(tweaks) => error
         ? <ErrorMsg onRetry={load} />
-        : <HomeView jilids={jilids} tweaks={tweaks} />
+        : <HomeView jilids={jilids} tweaks={tweaks} resume={resume} />
       }
     </AppShell>
   );
@@ -42,14 +51,12 @@ function ErrorMsg({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function HomeView({ jilids, tweaks }: { jilids: Jilid[]; tweaks: import("@/components/TweaksPanel").Tweaks }) {
+function HomeView({ jilids, tweaks, resume }: { jilids: Jilid[]; tweaks: import("@/components/TweaksPanel").Tweaks; resume: LocalResume }) {
   const [levelFilter, setLevelFilter] = useState("الكلّ");
   const filtered = useMemo(() => {
     if (levelFilter === "الكلّ") return jilids;
     return jilids.filter(j => j.level === levelFilter);
   }, [levelFilter, jilids]);
-
-  const resume = jilids.find(j => j.resume_unit != null && !j.locked);
 
   return (
     <main className="container" style={{ padding: "48px 28px 80px", animation: "fadeIn .25s ease" }}>
@@ -84,14 +91,11 @@ function HomeView({ jilids, tweaks }: { jilids: Jilid[]; tweaks: import("@/compo
             <div className="ar">
               <div className="eyebrow" style={{ color: "rgba(250,250,250,.6)" }}>متابعة القراءة</div>
               <div className="ar-display" style={{ fontSize: 24, marginTop: 4 }}>
-                {arText(resume.name, tweaks.tashkeel)} · الدّرس {toAD(resume.resume_unit)}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, fontFamily: "var(--font-ar)", fontSize: 14, color: "rgba(250,250,250,.7)" }}>
-                <span>{toAD(Math.round((resume.resume_progress ?? 0) * 100))}٪ مكتمل</span>
+                {arText(resume.jilidName, tweaks.tashkeel)} · الدّرس {toAD(resume.unitNum)}
               </div>
             </div>
           </div>
-          <Link href={`/unit/${resume.id}/${resume.resume_unit}`} className="btn btn-accent btn-lg">
+          <Link href={`/unit/${resume.jilidId}/${resume.unitNum}`} className="btn btn-accent btn-lg">
             تابع القراءة <Icon name="arrowL" size={16} />
           </Link>
         </section>

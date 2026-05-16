@@ -62,18 +62,37 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: 
   const [popup, setPopup] = useState<{ entry: Kamus; rect: DOMRect } | null>(null);
   const [readerFs, setReaderFs] = useState(tweaks.fontSize);
   const [localTashkeel, setLocalTashkeel] = useState(tweaks.tashkeel);
-  const [bookmark, setBookmark] = useState(unit.status === "current");
+  const BM_KEY = "aby_bookmarks";
+  const RESUME_KEY = "aby_resume";
+  const entryKey = `${jilid.id}:${unit.num}`;
 
-  const toggleBookmark = async () => {
+  const [bookmark, setBookmark] = useState(false);
+  useEffect(() => {
+    try {
+      const bm: string[] = JSON.parse(localStorage.getItem(BM_KEY) || "[]");
+      setBookmark(bm.includes(entryKey));
+    } catch {}
+  }, [entryKey]);
+
+  const toggleBookmark = () => {
     const next = !bookmark;
     setBookmark(next);
-    if (next) {
-      supabase.from("units").update({ status: "current" }).eq("id", unit.id);
-      supabase.from("jilids").update({ resume_unit: unit.num }).eq("id", jilid.id);
-    } else {
-      supabase.from("units").update({ status: "todo" }).eq("id", unit.id);
-      supabase.from("jilids").update({ resume_unit: null }).eq("id", jilid.id);
-    }
+    try {
+      const bm: string[] = JSON.parse(localStorage.getItem(BM_KEY) || "[]");
+      if (next) {
+        if (!bm.includes(entryKey)) bm.push(entryKey);
+        localStorage.setItem(BM_KEY, JSON.stringify(bm));
+        localStorage.setItem(RESUME_KEY, JSON.stringify({
+          jilidId: jilid.id, unitNum: unit.num, jilidName: jilid.name,
+        }));
+      } else {
+        localStorage.setItem(BM_KEY, JSON.stringify(bm.filter(b => b !== entryKey)));
+        const cur = JSON.parse(localStorage.getItem(RESUME_KEY) || "null");
+        if (cur?.jilidId === jilid.id && cur?.unitNum === unit.num) {
+          localStorage.removeItem(RESUME_KEY);
+        }
+      }
+    } catch {}
   };
 
   const onWord = useCallback((rect: DOMRect, entry: Kamus) => {
