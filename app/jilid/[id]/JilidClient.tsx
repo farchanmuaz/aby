@@ -16,19 +16,29 @@ export function JilidClient({ id }: Props) {
   const [jilid, setJilid] = useState<Jilid | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [missing, setMissing] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setError(false);
     Promise.all([
       supabase.from("jilids").select("*").eq("id", id).single(),
       supabase.from("units").select("*").eq("jilid_id", id).order("num"),
-    ]).then(([{ data: j }, { data: u }]) => {
-      if (!j) { setMissing(true); return; }
+    ]).then(([{ data: j, error: e1 }, { data: u }]) => {
+      if (e1 || !j) { setMissing(true); return; }
       setJilid(j as Jilid);
       setUnits((u ?? []) as Unit[]);
-    });
-  }, [id]);
+    }).catch(() => setError(true));
+  };
+
+  useEffect(() => { load(); }, [id]);
 
   if (missing) return <div style={{ padding: 60, textAlign: "center" }} className="ar">الجزء غير موجود</div>;
+  if (error) return (
+    <div style={{ padding: 80, textAlign: "center" }}>
+      <div className="ar" style={{ fontSize: 16, color: "var(--graphite)", marginBottom: 16 }}>تعذَّر تحميل البيانات.</div>
+      <button className="btn btn-ghost btn-sm" onClick={load}>إعادة المحاولة</button>
+    </div>
+  );
 
   return (
     <AppShell>

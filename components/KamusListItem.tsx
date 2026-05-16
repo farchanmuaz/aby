@@ -64,8 +64,10 @@ export function KamusListItem({ entry: e, q, open, onToggle, tashkeel }: KamusLi
           display: "grid", gridTemplateColumns: e.has_img ? "180px 1fr" : "1fr", gap: 24,
           animation: "fadeIn .18s ease",
         }}>
-          {e.has_img && (
-            <div className="imgph has-word" data-word={e.kalimah} style={{ aspectRatio: "1", borderRadius: "var(--r-image)" }} />
+          {e.has_img && e.img_url && (
+            <img src={e.img_url} alt={e.kalimah}
+              style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: "var(--r-image)", display: "block" }}
+            />
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <KamusField label="المُرادف" value={e.muradif} sign="≈" />

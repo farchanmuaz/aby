@@ -12,16 +12,27 @@ import { supabase } from "@/lib/supabase";
 
 export function KamusClient() {
   const [entries, setEntries] = useState<Kamus[]>([]);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    supabase.from("kamus").select("*").order("unit_num").order("kalimah").then(({ data }) => {
-      if (data) setEntries(data as Kamus[]);
+  const load = () => {
+    setError(false);
+    supabase.from("kamus").select("*").order("unit_num").order("kalimah").then(({ data, error }) => {
+      if (error || !data) { setError(true); return; }
+      setEntries(data as Kamus[]);
     });
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   return (
     <AppShell>
-      {(tweaks) => <KamusView entries={entries} tweaks={tweaks} />}
+      {(tweaks) => error
+        ? <div style={{ padding: 80, textAlign: "center" }}>
+            <div className="ar" style={{ fontSize: 16, color: "var(--graphite)", marginBottom: 16 }}>تعذَّر تحميل البيانات.</div>
+            <button className="btn btn-ghost btn-sm" onClick={load}>إعادة المحاولة</button>
+          </div>
+        : <KamusView entries={entries} tweaks={tweaks} />
+      }
     </AppShell>
   );
 }

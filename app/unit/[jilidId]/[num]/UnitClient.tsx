@@ -19,23 +19,33 @@ export function UnitClient({ jilidId, num }: Props) {
   const [materi, setMateri] = useState<Materi[]>([]);
   const [kamus, setKamus] = useState<Kamus[]>([]);
   const [missing, setMissing] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
+    setError(false);
     Promise.all([
       supabase.from("jilids").select("*").eq("id", jilidId).single(),
       supabase.from("units").select("*").eq("jilid_id", jilidId).eq("num", num).single(),
       supabase.from("materi").select("*").eq("jilid_id", jilidId).eq("unit_num", num).order("sort_order"),
       supabase.from("kamus").select("*").eq("jilid_id", jilidId).eq("unit_num", num),
-    ]).then(([{ data: j }, { data: u }, { data: m }, { data: k }]) => {
-      if (!j || !u) { setMissing(true); return; }
+    ]).then(([{ data: j, error: e1 }, { data: u }, { data: m }, { data: k }]) => {
+      if (e1 || !j || !u) { setMissing(true); return; }
       setJilid(j as Jilid);
       setUnit(u as Unit);
       setMateri((m ?? []) as Materi[]);
       setKamus((k ?? []) as Kamus[]);
-    });
-  }, [jilidId, num]);
+    }).catch(() => setError(true));
+  };
+
+  useEffect(() => { load(); }, [jilidId, num]);
 
   if (missing) return <div style={{ padding: 60, textAlign: "center" }} className="ar">الدّرس غير موجود</div>;
+  if (error) return (
+    <div style={{ padding: 80, textAlign: "center" }}>
+      <div className="ar" style={{ fontSize: 16, color: "var(--graphite)", marginBottom: 16 }}>تعذَّر تحميل البيانات.</div>
+      <button className="btn btn-ghost btn-sm" onClick={load}>إعادة المحاولة</button>
+    </div>
+  );
 
   return (
     <AppShell>
@@ -53,6 +63,18 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: 
   const [readerFs, setReaderFs] = useState(tweaks.fontSize);
   const [localTashkeel, setLocalTashkeel] = useState(tweaks.tashkeel);
   const [bookmark, setBookmark] = useState(unit.status === "current");
+
+  const toggleBookmark = async () => {
+    const next = !bookmark;
+    setBookmark(next);
+    if (next) {
+      supabase.from("units").update({ status: "current" }).eq("id", unit.id);
+      supabase.from("jilids").update({ resume_unit: unit.num }).eq("id", jilid.id);
+    } else {
+      supabase.from("units").update({ status: "todo" }).eq("id", unit.id);
+      supabase.from("jilids").update({ resume_unit: null }).eq("id", jilid.id);
+    }
+  };
 
   const onWord = useCallback((rect: DOMRect, entry: Kamus) => {
     setPopup({ entry, rect });
@@ -100,7 +122,7 @@ function UnitView({ jilid, unit, materi, kamus, tweaks }: { jilid: Jilid; unit: 
         </div>
         <button
           className={`btn btn-sm ${bookmark ? "btn-primary" : "btn-ghost"}`}
-          onClick={() => setBookmark(b => !b)}
+          onClick={toggleBookmark}
         >
           <Icon name="star" size={13} stroke={bookmark ? 0 : 1.6} style={bookmark ? { fill: "currentColor" } : {}} />
           {bookmark ? "مُحفوظ" : "حفظ"}

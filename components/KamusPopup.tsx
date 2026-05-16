@@ -43,9 +43,9 @@ export function KamusPopup({ entry, rect, onClose, tashkeel }: KamusPopupProps) 
         animation: "popIn .14s ease", overflow: "hidden",
       }}
     >
-      {entry.has_img && (
-        <div className="imgph has-word" data-word={entry.kalimah}
-          style={{ aspectRatio: "16/9", borderRadius: 0, borderTop: 0, borderLeft: 0, borderRight: 0 }}
+      {entry.has_img && entry.img_url && (
+        <img src={entry.img_url} alt={entry.kalimah}
+          style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }}
         />
       )}
       <div style={{ padding: "14px 18px" }}>

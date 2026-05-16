@@ -56,6 +56,7 @@ export interface Kamus {
   mithal: string | null;
   tashrif: Tashrif | null;
   has_img: boolean;
+  img_url: string | null;
 }
 
 export interface Activity {

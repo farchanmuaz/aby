@@ -873,11 +873,16 @@ function KamusFormModal({ item, jilids, units, onClose, onSave }: { item?: Kamus
   const submit = async () => {
     if (!valid) return;
     setUploading(true);
+    let imgUrl: string | null = item?.img_url ?? null;
     if (imgFile && hasImg) {
       const ext = imgFile.name.split(".").pop() || "jpg";
-      await supabase.storage.from("kamus-images").upload(`${entryId}.${ext}`, imgFile, { upsert: true, contentType: imgFile.type });
+      const path = `${entryId}.${ext}`;
+      await supabase.storage.from("kamus-images").upload(path, imgFile, { upsert: true, contentType: imgFile.type });
+      const { data: urlData } = supabase.storage.from("kamus-images").getPublicUrl(path);
+      imgUrl = urlData.publicUrl;
     }
-    onSave({ id: entryId, jilid_id: jilidId, unit_num: unitNum, kalimah: kalimah.trim(), sharh: sharh.trim(), jam: jam.trim() || null, mufrad: mufrad.trim() || null, muradif: muradif.trim() || null, didh: didh.trim() || null, mithal: mithal.trim() || null, has_img: hasImg, tashrif: withTashrif ? { madhi: madhi.trim(), mudhari: mudhari.trim(), masdar: masdar.trim() } : null }, item);
+    if (!hasImg) imgUrl = null;
+    onSave({ id: entryId, jilid_id: jilidId, unit_num: unitNum, kalimah: kalimah.trim(), sharh: sharh.trim(), jam: jam.trim() || null, mufrad: mufrad.trim() || null, muradif: muradif.trim() || null, didh: didh.trim() || null, mithal: mithal.trim() || null, has_img: hasImg, img_url: imgUrl, tashrif: withTashrif ? { madhi: madhi.trim(), mudhari: mudhari.trim(), masdar: masdar.trim() } : null }, item);
     setUploading(false);
   };
 

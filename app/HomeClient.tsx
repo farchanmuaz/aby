@@ -11,17 +11,34 @@ import { supabase } from "@/lib/supabase";
 
 export function HomeClient() {
   const [jilids, setJilids] = useState<Jilid[]>([]);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    supabase.from("jilids").select("*").order("id").then(({ data }) => {
-      if (data) setJilids(data as Jilid[]);
+  const load = () => {
+    setError(false);
+    supabase.from("jilids").select("*").order("id").then(({ data, error }) => {
+      if (error || !data) { setError(true); return; }
+      setJilids(data as Jilid[]);
     });
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
 
   return (
     <AppShell>
-      {(tweaks) => <HomeView jilids={jilids} tweaks={tweaks} />}
+      {(tweaks) => error
+        ? <ErrorMsg onRetry={load} />
+        : <HomeView jilids={jilids} tweaks={tweaks} />
+      }
     </AppShell>
+  );
+}
+
+function ErrorMsg({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div style={{ padding: "80px 24px", textAlign: "center" }}>
+      <div className="ar" style={{ fontSize: 16, color: "var(--graphite)", marginBottom: 16 }}>تعذَّر تحميل البيانات.</div>
+      <button className="btn btn-ghost btn-sm" onClick={onRetry}>إعادة المحاولة</button>
+    </div>
   );
 }
 
